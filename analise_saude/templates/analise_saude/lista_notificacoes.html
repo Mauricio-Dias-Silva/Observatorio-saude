@@ -1,0 +1,79 @@
+{% extends 'analise_saude/base.html' %}
+
+{% block title %}Notificações de Doenças{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Notificações de Doenças</h1>
+
+    <div class="card p-3 mb-4 shadow-sm">
+        <h4 class="card-title h5 mb-3">Filtrar Notificações</h4>
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="doenca" class="form-label">Doença:</label>
+                <select name="doenca" id="doenca" class="form-select">
+                    <option value="">Todas as Doenças</option>
+                    {% for d in doencas_disponiveis %}
+                        <option value="{{ d.doenca }}" {% if d.doenca == request.GET.doenca %}selected{% endif %}>
+                            {{ d.doenca }} ({{ d.total }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="data_inicio" class="form-label">De:</label>
+                <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+            </div>
+            <div class="col-md-3">
+                <label for="data_fim" class="form-label">Até:</label>
+                <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100 me-2">Aplicar</button>
+                <a href="{% url 'lista_notificacoes' %}" class="btn btn-secondary w-100">Limpar</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Doença</th>
+                    <th>Região</th>
+                    <th>Faixa Etária</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for notificacao in notificacoes %}
+                    <tr>
+                        <td>{{ notificacao.data_notificacao }}</td>
+                        <td>{{ notificacao.doenca }}</td>
+                        <td>{{ notificacao.regiao }}</td>
+                        <td>{{ notificacao.faixa_etaria }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">Nenhuma notificação encontrada com os filtros aplicados.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <nav aria-label="Paginação">
+        <ul class="pagination justify-content-center">
+            {% if notificacoes.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; primeira</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ notificacoes.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">anterior</a></li>
+            {% endif %}
+
+            <li class="page-item disabled"><span class="page-link">Página {{ notificacoes.number }} de {{ notificacoes.paginator.num_pages }}.</span></li>
+
+            {% if notificacoes.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ notificacoes.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">próxima</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ notificacoes.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&raquo; última</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends 'analise_saude/base.html' %}
+
+{% block title %}Dashboard - Observatório de Saúde{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4 text-center">Dashboard do Observatório de Saúde Pública</h1>
+
+    <div class="row text-center mb-5">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Total de Casos Notificados</h5>
+                    <p class="card-text fs-1 fw-bold">{{ total_casos }}</p>
+                    <a href="{% url 'lista_notificacoes' %}" class="btn btn-outline-primary btn-sm">Ver Notificações</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Casos nos Últimos 7 Dias</h5>
+                    <p class="card-text fs-1 fw-bold">{{ casos_7dias }}</p>
+                    <a href="{% url 'lista_notificacoes' %}?dias=7" class="btn btn-outline-danger btn-sm">Ver Casos Recentes</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100 bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Previsão de Risco de Surto</h5>
+                    <p class="card-text fs-1 fw-bold">Baixo</p>
+                    <p class="card-text mt-3">Com base nos dados climáticos dos últimos 7 dias.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow-sm h-100 p-3">
+                <h2 class="card-title h4">Correlação: Casos de Doença vs. Clima (Últimos 30 Dias)</h2>
+                <canvas id="correlacaoCasosClimaChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100 p-3">
+                <h2 class="card-title h4">Tendência de Casos (Últimos 30 Dias)</h2>
+                <canvas id="tendenciaCasosChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100 p-3">
+                <h2 class="card-title h4">Distribuição de Doenças</h2>
+                <canvas id="distribuicaoDoencasChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Dados de correlação (casos vs. clima)
+            const correlacao_data = JSON.parse('{{ correlacao_casos_clima_json|safe }}');
+            const labels_correlacao = correlacao_data.map(item => item.data);
+            const data_casos_correlacao = correlacao_data.map(item => item.casos);
+            const data_temperatura = correlacao_data.map(item => item.temperatura);
+            const data_precipitacao = correlacao_data.map(item => item.precipitacao);
+
+            const ctx1 = document.getElementById('correlacaoCasosClimaChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels_correlacao,
+                    datasets: [
+                        {
+                            label: 'Casos Notificados',
+                            data: data_casos_correlacao,
+                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                            yAxisID: 'y_casos'
+                        },
+                        {
+                            label: 'Temperatura Média (°C)',
+                            data: data_temperatura,
+                            type: 'line',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            yAxisID: 'y_temp'
+                        },
+                        {
+                            label: 'Precipitação (mm)',
+                            data: data_precipitacao,
+                            type: 'line',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            yAxisID: 'y_precip'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y_casos: { type: 'linear', display: true, position: 'left', beginAtZero: true },
+                        y_temp: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, beginAtZero: false },
+                        y_precip: { type: 'linear', display: false, position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true }
+                    }
+                }
+            });
+
+
+            // Gráfico de tendência de casos (separado da correlação)
+            const tendencia_data = JSON.parse('{{ tendencia_casos_json|safe }}');
+            const labels_tendencia = tendencia_data.map(item => item.data_notificacao);
+            const data_tendencia = tendencia_data.map(item => item.count);
+            
+            const ctx2 = document.getElementById('tendenciaCasosChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels_tendencia,
+                    datasets: [{
+                        label: 'Casos Notificados',
+                        data: data_tendencia,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+            
+            // Gráfico de Distribuição de Doenças
+            const distribuicao_data = JSON.parse('{{ distribuicao_doencas_json|safe }}');
+            const labels_dist = distribuicao_data.map(item => item.doenca);
+            const data_dist = distribuicao_data.map(item => item.total);
+
+            const ctx3 = document.getElementById('distribuicaoDoencasChart').getContext('2d');
+            new Chart(ctx3, {
+                type: 'pie',
+                data: {
+                    labels: labels_dist,
+                    datasets: [{
+                        data: data_dist,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                        ],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+        });
+    </script>
+{% endblock %}
