@@ -1,5 +1,6 @@
 gunicorn
 psycopg2-binary
+whitenoise
 asgiref==3.9.1
 certifi==2025.8.3
 charset-normalizer==3.4.3
@@ -19,6 +20,7 @@ sqlparse==0.5.3
 threadpoolctl==3.6.0
 tzdata==2025.2
 urllib3==2.5.0
+
 
 
 
