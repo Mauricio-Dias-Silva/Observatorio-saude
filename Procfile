@@ -1,1 +1,1 @@
-web: gunicorn observatorio_saude.wsgi:application
+web: python manage.py migrate && gunicorn observatorio_saude.wsgi:application
