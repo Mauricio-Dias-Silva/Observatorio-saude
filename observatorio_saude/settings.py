@@ -1,3 +1,5 @@
+# /observatorio_saude/settings.py
+# [VERSÃO ATUALIZADA - PRONTA PARA CLOUD RUN + CLOUD SQL]
 
 from pathlib import Path
 import os
@@ -12,14 +14,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-oru+m!fnk=hedmvxyz3me-s7jf7d53u&=mkr4e8-e3-srwkl^z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# "DECORAÇÃO": DEBUG = False é obrigatório para produção.
+DEBUG = False
 
-ALLOWED_HOSTS = []
+# "DECORAÇÃO": ['*'] permite que o Cloud Run acesse seu site.
+# (Em produção real, você trocaria '*' pela URL do seu serviço).
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    # "DECORAÇÃO": Whitenoise serve os arquivos estáticos (CSS/JS)
+    # Deve vir primeiro.
+    'whitenoise.runserver_nostatic',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -31,6 +39,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # "DECORAÇÃO": Whitenoise Middleware
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -45,7 +55,7 @@ ROOT_URLCONF = 'observatorio_saude.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Adicione esta linha
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -64,26 +74,32 @@ WSGI_APPLICATION = 'observatorio_saude.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# -----------------------------------------------------------------
+# "DECORAÇÃO": CONFIGURAÇÃO DE BANCO DE DADOS PARA CLOUD RUN + CLOUD SQL
+# -----------------------------------------------------------------
+# Removemos o SQLite e o MySQL. Esta é a configuração correta.
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+
+        # PREENCHA COM OS DADOS DO SEU CLOUD SQL:
+        'NAME': 'pythonjet-db',     # O nome do banco que você criou
+        'USER': 'postgres',          # O usuário (geralmente 'postgres')
+        
+        # !!!!!!!!!!! ATENÇÃO !!!!!!!!!!!
+        # COLOQUE A SENHA QUE VOCÊ CRIOU PARA O CLOUD SQL AQUI
+        'PASSWORD': 'SUA_SENHA_AQUI', 
+        # !!!!!!!!!!! ATENÇÃO !!!!!!!!!!!
+
+        # "DECORAÇÃO": Este é o "caminho mágico" (Unix Socket) para
+        # conectar o Cloud Run ao Cloud SQL de forma rápida e segura.
+        # Formato: /cloudsql/[PROJECT_ID]:[REGION]:[INSTANCE_NAME]
+        'HOST': '/cloudsql/pythonjet:us-east1:pythonjet-db',
+        
+        'PORT': '5432', # Deixe como 5432
     }
 }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'observatorio_saude_db',
-#         'USER': 'seu_usuario_mysql',
-#         'PASSWORD': 'sua_senha_mysql',
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#         'OPTIONS': {
-#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-#         }
-#     }
-# }
+# -----------------------------------------------------------------
 
 
 # Password validation
@@ -109,11 +125,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -122,7 +135,22 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# "DECORAÇÃO": Onde o 'collectstatic' vai salvar os arquivos
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# "DECORAÇÃO": Otimização do Whitenoise
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
