@@ -1,0 +1,1 @@
+web: gunicorn observatorio_saude.wsgi:application
