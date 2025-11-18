@@ -78,27 +78,36 @@ WSGI_APPLICATION = 'observatorio_saude.wsgi.application'
 # "DECORAÇÃO": CONFIGURAÇÃO DE BANCO DE DADOS PARA CLOUD RUN + CLOUD SQL
 # -----------------------------------------------------------------
 # Removemos o SQLite e o MySQL. Esta é a configuração correta.
+# /observatorio_saude/settings.py
+
+# ... (outras configurações) ...
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-
-        # PREENCHA COM OS DADOS DO SEU CLOUD SQL:
-        'NAME': 'pythonjet-db',     # O nome do banco que você criou
-        'USER': 'postgres',          # O usuário (geralmente 'postgres')
+        
+        # -----------------------------------------------------------------
+        # "DECORAÇÃO": APONTANDO PARA O BANCO DE DADOS *DO CLIENTE*
+        # -----------------------------------------------------------------
+        'NAME': 'observatorio_saude_db',  # <-- "DECORAÇÃO": O NOVO BANCO
+        
+        'USER': 'postgres', # O usuário 'postgres' (o "zelador")
         
         # !!!!!!!!!!! ATENÇÃO !!!!!!!!!!!
-        # COLOQUE A SENHA QUE VOCÊ CRIOU PARA O CLOUD SQL AQUI
+        # COLOQUE A SENHA DO USUÁRIO 'postgres' AQUI
+        # (A senha que você criou para a *instância* do Cloud SQL)
         'PASSWORD': 'SUA_SENHA_AQUI', 
         # !!!!!!!!!!! ATENÇÃO !!!!!!!!!!!
 
         # "DECORAÇÃO": Este é o "caminho mágico" (Unix Socket) para
-        # conectar o Cloud Run ao Cloud SQL de forma rápida e segura.
-        # Formato: /cloudsql/[PROJECT_ID]:[REGION]:[INSTANCE_NAME]
+        # conectar na *INSTÂNCIA* (o "prédio"). Está correto.
         'HOST': '/cloudsql/pythonjet:us-east1:pythonjet-db',
         
-        'PORT': '5432', # Deixe como 5432
+        'PORT': '5432',
     }
 }
+
+# ... (resto do settings.py) ...
 # -----------------------------------------------------------------
 
 
